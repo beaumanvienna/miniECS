@@ -54,10 +54,10 @@ namespace ECS
     template <typename T>
     uint GetComponentType()
     {
-        static uint componetTypeIdentifier = 0;
+        static int componetTypeIdentifier = -1;
 
         // 1st time for this type
-        if (!componetTypeIdentifier)
+        if (componetTypeIdentifier == -1)
         {
             componetTypeIdentifier = globalComponetCounter++;
             ComponentPool pool = {AllocatePool<T>()};
