@@ -113,4 +113,28 @@ int main()
             normal.Print();
         }
     }
+
+    // test component push based on component type ID
+    auto obj03 = ECS::CreateEntity();
+    auto componentTypeID = ECS::GetComponentType<PositionComponent>();
+
+    PositionComponent positionComponent = { 10.0, 20.0, 30.0}; // constructor is called for stack-allocated object
+    // push via component type ID (without template)
+    ECS::Push(obj03, componentTypeID, &positionComponent);
+
+    // and read back
+    std::cout << "Get obj03 via component type ID" << std::endl;
+    auto comp =  (PositionComponent*)ECS::Get(obj03, componentTypeID);
+    comp->Print();
+
+    {
+        std::cout << "positionView alone, should be: obj02 & obj03" << std::endl;
+        auto positionView = ECS::View<PositionComponent>();
+        for (auto obj: positionView)
+        {
+            std::cout << "EnityID: " << obj<< std::endl;
+            auto position = ECS::Get<PositionComponent>(obj);
+            position.Print();
+        }
+    }
 }

@@ -24,6 +24,7 @@
 
 #include <bitset>
 #include <vector>
+#include <cstring>
 
 #include "types.h"
 
@@ -37,7 +38,9 @@ namespace ECS
     uint globalEntityCounter = 0;
 
     struct EntityDescription;
+    struct TypeDescription;
     std::vector<EntityDescription> entities;
+    std::vector<TypeDescription> types;
     std::vector<uint> recycle; // entity IDs to be recycled
 
     struct ComponentPool;
@@ -62,6 +65,9 @@ namespace ECS
             componetTypeIdentifier = globalComponetCounter++;
             ComponentPool pool = {AllocatePool<T>()};
             componentPools.push_back(pool);
+
+            TypeDescription typeDescription = {sizeof(T)};
+            types.push_back(typeDescription);
         }
         return componetTypeIdentifier;
     }
@@ -70,6 +76,11 @@ namespace ECS
     {
         EntityID m_ID;
         ComponentMask m_Mask;
+    };
+
+    struct TypeDescription
+    {
+        size_t m_Size;
     };
     
     struct ComponentPool
@@ -106,6 +117,26 @@ namespace ECS
         // get pool
         T* pool = (T*) componentPools[componentType].m_Pool.data();
         pool[id] = component;
+    }
+
+    void Push(EntityID id, uint componentType, void* obj)
+    {
+        assert(id < globalEntityCounter);
+        assert(componentType < globalComponetCounter);
+
+        entities[id].m_Mask.set(componentType);
+        
+        void* src = obj;
+        unsigned char* dest = componentPools[componentType].m_Pool.data() + id*types[componentType].m_Size;
+        memcpy(dest, src, types[componentType].m_Size);
+    }
+
+    void* Get(EntityID id, uint componentType)
+    {
+        assert(id < globalEntityCounter);
+        assert(componentType < globalComponetCounter);
+        unsigned char* dest = componentPools[componentType].m_Pool.data() + id*types[componentType].m_Size;
+        return dest;
     }
 
     template <typename T>
