@@ -34,7 +34,7 @@ namespace ECS
     typedef uint32_t EntityID;
 
     uint globalComponetCounter = 0;
-    uint globalEntityCounter = 1;
+    uint globalEntityCounter = 0;
 
     struct EntityDescription;
     std::vector<EntityDescription> entities;
@@ -101,7 +101,7 @@ namespace ECS
         assert(id < globalEntityCounter);
         uint componentType = GetComponentType<T>();
 
-        entities[id].m_Mask.set(id);
+        entities[id].m_Mask.set(componentType);
 
         // get pool
         T* pool = (T*) componentPools[componentType].m_Pool.data();
@@ -109,9 +109,31 @@ namespace ECS
     }
 
     template <typename T>
-    T* View()
+    T& Get(EntityID id)
     {
         uint componentType = GetComponentType<T>();
-        return (T*) componentPools[componentType].m_Pool.data();
+        T* ptr = (T*) componentPools[componentType].m_Pool.data();
+        return ptr[id];
+    }
+
+    template<typename... T>
+    std::vector<EntityID> View()
+    {
+        std::vector<EntityID> view;
+        uint componentTypes[] = { GetComponentType<T>() ... };
+        std::bitset<32> mask = 0;
+        for (uint i = 0; i < sizeof...(T); i++)
+        {
+            mask.set(componentTypes[i]);
+        }
+
+        for (uint i = 0; i < entities.size(); i++)
+        {
+            if (entities[i].m_Mask == mask)
+            {
+                view.push_back(i);
+            }
+        }
+        return view;
     }
 }
